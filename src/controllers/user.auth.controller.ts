@@ -1,12 +1,17 @@
 import {NextFunction, Response} from "express";
 import {InfoMessages} from "../constants/messages.js";
 import {IRequest} from "../constants/request.js";
-import {loginUserService, registerUserService} from "../services/user.service.js";
+import {
+    getLeaderboardService,
+    loginUserService,
+    registerUserService,
+    saveUserPreferencesService
+} from "../services/user.service.js";
 
 export const userSignUpController = async (req: IRequest, res: Response, next: NextFunction) => {
     try {
         console.log(InfoMessages.USER_SIGNUP_STARTED);
-        const data = await registerUserService(req.body);
+        const data = await registerUserService(req.body, req.file);
         console.log(InfoMessages.USER_SIGNUP_SUCCESSFUL);
         res.send(data);
     } catch (e) {
@@ -23,3 +28,37 @@ export const loginUserController = async (req: IRequest, res: Response, next: Ne
     }
 };
 
+export const getLeaderboardController = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const leaderboard = await getLeaderboardService();
+        res.status(200).json(leaderboard);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const saveUserPreferencesController = async (req: IRequest, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?._id;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const result = await saveUserPreferencesService(userId, req.body);
+
+        res.status(200).json({
+            success: true,
+            message: "Preferences saved successfully",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
