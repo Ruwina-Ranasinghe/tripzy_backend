@@ -18,6 +18,9 @@ export interface IPost extends Document {
         createdAt: Date;
     }[];
     impressions: number;
+    aiCaption?: string;
+    aiTags?: string[];
+    imageEmbedding?: number[];
     createdAt: Date;
 
 }
@@ -55,7 +58,10 @@ const postSchema = new Schema<IPost>(
             }
         ],
 
-        impressions: { type: Number, default: 0 }
+        impressions: { type: Number, default: 0 },
+        aiCaption: { type: String },
+        aiTags: { type: [String], default: [] },
+        imageEmbedding: [{ type: Number }]
     },
     { timestamps: true }
 );

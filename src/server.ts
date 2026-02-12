@@ -6,7 +6,7 @@ import {initDatabase} from "./dataaccess/index.js";
 import {routes} from "./routes/index.js";
 
 dotenv.config();
-const port = process.env.PORT || 5050;
+const port = process.env.PORT ? Number(process.env.PORT) : 5050;
 
 const app:Application = express();
 
@@ -22,7 +22,8 @@ app.get("/", (req:Request, res:Response)=>{
 
 routes(app);
 
-app.listen(port, ()=> {
+app.listen(port, '0.0.0.0', ()=> {
     console.log(`Tripzy api server v${process.env.NPM_VERSION} started on PORT ${port}`);
-})
+});
+
 

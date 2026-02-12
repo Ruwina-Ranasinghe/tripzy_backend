@@ -3,11 +3,12 @@ import {
     addCommentRepo,
     createPostRepo,
     findPostByIdRepo,
-    getAllPostsRepo, getMyTravelLocationsRepo,
+    getAllPostsRepo, getMyTravelLocationsRepo, getRecommendedPostsRepo,
     likePostRepo,
     unlikePostRepo
 } from "../dataaccess/post.repo.js";
 import geocoder from "../utils/geocoder.js";
+import {User} from "../models/user.model.js";
 
 export const createPostService = async (data: any, file?: Express.Multer.File, user?: any) => {
     let imageUrl: string | undefined = undefined;
@@ -40,12 +41,11 @@ export const createPostService = async (data: any, file?: Express.Multer.File, u
         impressions: 0,
     });
 
-    // Populate postedBy user fields
+    // Populate user
     await newPost.populate("postedBy", "displayName picturePath");
 
     const p = newPost.toObject();
 
-    // Return formatted post including username
     return {
         ...p,
         username: (p.postedBy as any)?.displayName || "Unknown",
@@ -72,6 +72,23 @@ export const getAllPostsService = async () => {
     });
 };
 
+
+export const getRecommendedPostsService = async (userId: string) => {
+    const posts = await getRecommendedPostsRepo(userId);
+
+    return posts.map(post => {
+        const p = post.toObject();
+        const postedByUser = post.postedBy as any;
+        return {
+            ...p,
+            username: postedByUser?.displayName || 'Unknown',
+            profileImage: postedByUser?.picturePath || null,
+            likes: p.likes.length,
+            comments: p.comments.length,
+        };
+    });
+};
+
 export const likePostService = async (postId: string, user?: any) => {
     const post = await findPostByIdRepo(postId);
     if (!post) throw new Error("Post not found");
@@ -84,6 +101,13 @@ export const likePostService = async (postId: string, user?: any) => {
         updatedPost = await unlikePostRepo(postId, user._id);
     } else {
         updatedPost = await likePostRepo(postId, user._id);
+
+        // Merge post AI tags into user's interestTags
+        if (post.aiTags && post.aiTags.length > 0) {
+            await User.findByIdAndUpdate(user._id, {
+                $addToSet: { interestTags: { $each: post.aiTags } }
+            });
+        }
     }
 
     return updatedPost;
@@ -98,6 +122,13 @@ export const addCommentService = async (postId: string, user: any, text: string)
 
     const updatedPost = await addCommentRepo(postId, comment);
     if (!updatedPost) throw new Error("Post not found");
+
+    // Merge post AI tags into user's interestTags
+    if (updatedPost.aiTags && updatedPost.aiTags.length > 0) {
+        await User.findByIdAndUpdate(user._id, {
+            $addToSet: { interestTags: { $each: updatedPost.aiTags } }
+        });
+    }
 
     return updatedPost;
 };

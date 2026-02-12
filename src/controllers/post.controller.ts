@@ -2,7 +2,7 @@ import {
     addCommentService,
     createPostService,
     getAllPostsService,
-    getMyTravelLocationsService,
+    getMyTravelLocationsService, getRecommendedPostsService,
     likePostService
 } from "../services/post.service.js";
 import {IRequest} from "../constants/request.js";
@@ -26,6 +26,25 @@ export const getAllPostsController = async (req: any, res: any) => {
         const posts = await getAllPostsService();
         return res.status(200).json({
             message: "Posts fetched successfully",
+            data: posts,
+        });
+    } catch (error: any) {
+        console.error(error);
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const getRecommendedPostsController = async (req: any, res: any) => {
+    try {
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const posts = await getRecommendedPostsService(userId);
+
+        return res.status(200).json({
+            message: "Recommended posts fetched successfully",
             data: posts,
         });
     } catch (error: any) {

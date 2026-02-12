@@ -13,6 +13,7 @@ export interface IUser extends Document{
     scoreForLeaderboard: number;
     viewedProfile: number;
     impressions: number;
+    interestTags: string[];
     preferences?: {
         // Travel Style / Interest
         travelStyle?: string[];       // e.g., ["Adventure", "Cultural"]
@@ -54,6 +55,7 @@ const userSchema = new Schema<IUser>(
             weather: { type: String },
             stayType: { type: String },
         },
+        interestTags: { type: [String], default: [] }
     },
     {timestamps: true}
 );
