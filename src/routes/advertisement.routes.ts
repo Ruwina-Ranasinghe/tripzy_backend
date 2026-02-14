@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth/shield.js";
-import { uploadMultiple } from "../middleware/upload.middleware.js";
 import {
     createAdvertisementController,
     getAllAdvertisementsController,
@@ -15,6 +14,7 @@ import {
     getUserAdvertisementStatsController,
     searchAdvertisementsController
 } from "../controllers/advertisement.controller.js";
+import {uploadMultiple} from "../middleware/upload.middleware.js";
 
 export const advertisementRoutes = Router();
 
