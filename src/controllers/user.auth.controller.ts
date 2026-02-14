@@ -2,6 +2,7 @@ import {NextFunction, Response} from "express";
 import {InfoMessages} from "../constants/messages.js";
 import {IRequest} from "../constants/request.js";
 import {
+    getCurrentUserRankService, // ADD THIS
     getLeaderboardService,
     loginUserService,
     registerUserService,
@@ -28,12 +29,43 @@ export const loginUserController = async (req: IRequest, res: Response, next: Ne
     }
 };
 
-export const getLeaderboardController = async (req: Request, res: Response, next: NextFunction) => {
+// FIXED: Return data in 'data' field
+export const getLeaderboardController = async (req: any, res: Response, next: NextFunction) => {
     try {
         const leaderboard = await getLeaderboardService();
-        res.status(200).json(leaderboard);
+        res.status(200).json({
+            success: true,
+            data: leaderboard // WRAP IN 'data' field
+        });
     } catch (error) {
         next(error);
+    }
+};
+
+// ADD THIS NEW CONTROLLER
+export const getCurrentUserRankController = async (req: any, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?._id;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const rankData = await getCurrentUserRankService(userId);
+
+        return res.status(200).json({
+            success: true,
+            data: rankData,
+        });
+    } catch (error: any) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 

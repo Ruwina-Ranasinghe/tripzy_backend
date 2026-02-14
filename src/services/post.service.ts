@@ -15,10 +15,10 @@ import { User } from "../models/user.model.js";
 // UPDATED: Support multiple images
 export const createPostService = async (
     data: any,
-    files?: Express.Multer.File[], // CHANGED: array of files
+    files?: Express.Multer.File[],
     user?: any
 ) => {
-    // CHANGED: Upload multiple images to Cloudinary
+    // Upload multiple images to Cloudinary
     const imageUrls: string[] = [];
 
     if (files && files.length > 0) {
@@ -45,10 +45,8 @@ export const createPostService = async (
     let imageLayout: 'single' | 'grid' | 'carousel' | 'collage' = 'single';
 
     if (data.imageLayout) {
-        // If user specified a layout, use it
         imageLayout = data.imageLayout;
     } else {
-        // Auto-determine layout based on image count
         if (imageUrls.length === 1) {
             imageLayout = 'single';
         } else if (imageUrls.length <= 4) {
@@ -63,8 +61,8 @@ export const createPostService = async (
     // Save post with multiple images
     const newPost = await createPostRepo({
         caption: data.caption || "",
-        imageUrl: imageUrls, // CHANGED: Save to imageUrl field (array)
-        imageLayout: imageLayout, // NEW: layout type
+        imageUrl: imageUrls,
+        imageLayout: imageLayout,
         location: data.location,
         locationCoords: coords,
         taggedPeople: [],
@@ -72,6 +70,11 @@ export const createPostService = async (
         likes: [],
         comments: [],
         impressions: 0,
+    });
+
+    // NEW: Add 5 points to user's leaderboard score
+    await User.findByIdAndUpdate(user._id, {
+        $inc: { scoreForLeaderboard: 5 }
     });
 
     // Populate user
@@ -85,7 +88,6 @@ export const createPostService = async (
         profileImage: (p.postedBy as any)?.picturePath || "",
         likes: p.likes.length,
         comments: p.comments.length,
-        // FIXED: Return images from imageUrl field
         images: p.imageUrl || [],
         imageLayout: p.imageLayout || 'single'
     };
@@ -103,7 +105,6 @@ export const getAllPostsService = async () => {
             profileImage: postedByUser?.picturePath || null,
             likes: p.likes.length,
             comments: p.comments.length,
-            // FIXED: Return images from imageUrl field
             images: p.imageUrl || [],
             imageLayout: p.imageLayout || 'single'
         };
@@ -122,7 +123,6 @@ export const getRecommendedPostsService = async (userId: string) => {
             profileImage: postedByUser?.picturePath || null,
             likes: p.likes.length,
             comments: p.comments.length,
-            // FIXED: Return images from imageUrl field
             images: p.imageUrl || [],
             imageLayout: p.imageLayout || 'single'
         };

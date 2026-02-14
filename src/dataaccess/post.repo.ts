@@ -103,4 +103,9 @@ export const getMyTravelLocationsRepo = async (userId: string) => {
         .sort({ createdAt: -1 });
 };
 
-
+export const getUserPostsRepo = (userId: string) => {
+    return Post.find({ postedBy: userId })
+        .populate("postedBy", "displayName picturePath") // ADD THIS - populate user info
+        .sort({ createdAt: -1 })
+        .exec();
+};

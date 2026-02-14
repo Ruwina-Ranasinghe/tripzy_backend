@@ -1,8 +1,23 @@
-import {createUserRepo, findOneUserRepo, getTopUsersRepo, updateUserPreferencesRepo} from "../dataaccess/user.repo.js";
+import {
+    createUserRepo,
+    findOneUserRepo,
+    getTopUsersRepo,
+    getUserRankRepo, // ADD THIS
+    updateUserPreferencesRepo
+} from "../dataaccess/user.repo.js";
 import { ErrorMessages } from "../constants/messages.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {uploadToCloudinary} from "./file.service.js";
+
+// ADD THESE HELPER FUNCTIONS
+const calculateLevel = (score: number): number => {
+    return Math.floor(score / 100) + 1;
+};
+
+const calculateCountriesVisited = (score: number): number => {
+    return Math.floor(score / 200);
+};
 
 export const registerUserService = async (data: any, file?: Express.Multer.File) => {
     const exist = await findOneUserRepo({ email: data.email });
@@ -20,7 +35,7 @@ export const registerUserService = async (data: any, file?: Express.Multer.File)
         email: data.email,
         password: data.password,
         country: data.country,
-        picturePath, // save image URL
+        picturePath,
     });
 
     const token = jwt.sign(
@@ -41,8 +56,6 @@ export const registerUserService = async (data: any, file?: Express.Multer.File)
     };
 };
 
-
-
 export const loginUserService = async (data: any) => {
     if (!data.email || !data.password) {
         throw new Error("Email and password required");
@@ -54,12 +67,12 @@ export const loginUserService = async (data: any) => {
     const isMatch = await bcrypt.compare(data.password, user.password);
     if (!isMatch) throw new Error(ErrorMessages.INVALID_CREDENTIALS);
 
-
     const token = jwt.sign(
         { id: user._id, email: user.email },
         process.env.JWT_SECRET || "supersecretkey",
         { expiresIn: "7d" }
     );
+
     return {
         id: user._id,
         firstName: user.firstName,
@@ -71,18 +84,41 @@ export const loginUserService = async (data: any) => {
     };
 };
 
+// UPDATED: Return data inside 'data' field
 export const getLeaderboardService = async () => {
-    const topUsers = await getTopUsersRepo(10); // top 10 users
+    const topUsers = await getTopUsersRepo(10);
+
     return topUsers.map(user => ({
         id: user._id,
         displayName: user.displayName,
         firstName: user.firstName,
         lastName: user.lastName,
         country: user.country,
-        score: user.scoreForLeaderboard,
+        scoreForLeaderboard: user.scoreForLeaderboard,
         picturePath: user.picturePath,
+        level: calculateLevel(user.scoreForLeaderboard),
+        countriesVisited: calculateCountriesVisited(user.scoreForLeaderboard),
     }));
 };
+
+// ADD THIS NEW SERVICE
+export const getCurrentUserRankService = async (userId: string) => {
+    const result = await getUserRankRepo(userId);
+
+    if (!result) {
+        throw new Error("User not found");
+    }
+
+    const { user, rank } = result;
+
+    return {
+        rank,
+        score: user.scoreForLeaderboard,
+        level: calculateLevel(user.scoreForLeaderboard),
+        countriesVisited: calculateCountriesVisited(user.scoreForLeaderboard),
+    };
+};
+
 export const saveUserPreferencesService = async (userId: string, data: any) => {
     if (!userId) {
         throw new Error("User ID is required");
@@ -94,7 +130,7 @@ export const saveUserPreferencesService = async (userId: string, data: any) => {
         activities: data.activities || [],
         preferredDestinations: data.destinations || [],
         weather: data.weather || "",
-        stayType: data.accommodation?.[0] || "", // Take first accommodation type
+        stayType: data.accommodation?.[0] || "",
     };
 
     const updatedUser = await updateUserPreferencesRepo(userId, preferences);

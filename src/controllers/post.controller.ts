@@ -7,6 +7,7 @@ import {
     likePostService
 } from "../services/post.service.js";
 import {IRequest} from "../constants/request.js";
+import {getUserPostsRepo} from "../dataaccess/post.repo.js";
 
 export const createPostController = async (req: any, res: any) => {
     try {
@@ -105,5 +106,47 @@ export const getMyTravelLocations = async (req: any, res: any) => {
         res.json({ success: true, locations });
     } catch (err) {
         res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+export const getMyPostsController = async (req: any, res: any) => {
+    try {
+        const userId = req.user?._id;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const posts = await getUserPostsRepo(userId);
+
+        // Format posts properly
+        const formattedPosts = posts.map(post => {
+            const p = post.toObject();
+            const postedByUser = post.postedBy as any;
+
+            return {
+                ...p,
+                username: postedByUser?.displayName || 'Unknown', // ADD THIS
+                profileImage: postedByUser?.picturePath || null, // ADD THIS
+                images: p.imageUrl || [],
+                imageLayout: p.imageLayout || 'single',
+                likes: p.likes.length,
+                comments: p.comments.length,
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            data: formattedPosts
+        });
+    } catch (error: any) {
+        console.error('Error fetching my posts:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
