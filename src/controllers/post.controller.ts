@@ -2,14 +2,16 @@ import {
     addCommentService,
     createPostService,
     getAllPostsService,
-    getMyTravelLocationsService, getRecommendedPostsService,
+    getMyTravelLocationsService,
+    getRecommendedPostsService,
     likePostService
 } from "../services/post.service.js";
 import {IRequest} from "../constants/request.js";
 
 export const createPostController = async (req: any, res: any) => {
     try {
-        const post = await createPostService(req.body, req.file, req.user);
+        // FIXED: Pass req.files (array) instead of req.file (single)
+        const post = await createPostService(req.body, req.files, req.user);
 
         return res.status(201).json({
             message: "Post created successfully",
@@ -105,6 +107,3 @@ export const getMyTravelLocations = async (req: any, res: any) => {
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
-
-
-

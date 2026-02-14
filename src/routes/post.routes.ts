@@ -11,7 +11,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 export const postRoutes = Router();
 
-postRoutes.post("/create", upload.single("image"), authMiddleware,createPostController);
+postRoutes.post(
+    "/create",
+    authMiddleware,
+    upload.array("images", 10),
+    createPostController
+);
 postRoutes.get("/", authMiddleware,getAllPostsController);
 postRoutes.post("/like/:id", authMiddleware, likePostController);
 postRoutes.post("/comment/:id", authMiddleware, addCommentController);

@@ -3,19 +3,32 @@ import {
     addCommentRepo,
     createPostRepo,
     findPostByIdRepo,
-    getAllPostsRepo, getMyTravelLocationsRepo, getRecommendedPostsRepo,
+    getAllPostsRepo,
+    getMyTravelLocationsRepo,
+    getRecommendedPostsRepo,
     likePostRepo,
     unlikePostRepo
 } from "../dataaccess/post.repo.js";
 import geocoder from "../utils/geocoder.js";
-import {User} from "../models/user.model.js";
+import { User } from "../models/user.model.js";
 
-export const createPostService = async (data: any, file?: Express.Multer.File, user?: any) => {
-    let imageUrl: string | undefined = undefined;
+// UPDATED: Support multiple images
+export const createPostService = async (
+    data: any,
+    files?: Express.Multer.File[], // CHANGED: array of files
+    user?: any
+) => {
+    // CHANGED: Upload multiple images to Cloudinary
+    const imageUrls: string[] = [];
 
-    if (file) {
-        imageUrl = await uploadToCloudinary(file);
+    if (files && files.length > 0) {
+        for (const file of files) {
+            const imageUrl = await uploadToCloudinary(file);
+            imageUrls.push(imageUrl);
+        }
     }
+
+    // Geocode location if provided
     let coords: { lat: number; lng: number } | undefined = undefined;
 
     if (data.location) {
@@ -28,10 +41,30 @@ export const createPostService = async (data: any, file?: Express.Multer.File, u
         }
     }
 
-    // Save post
+    // Determine image layout based on number of images
+    let imageLayout: 'single' | 'grid' | 'carousel' | 'collage' = 'single';
+
+    if (data.imageLayout) {
+        // If user specified a layout, use it
+        imageLayout = data.imageLayout;
+    } else {
+        // Auto-determine layout based on image count
+        if (imageUrls.length === 1) {
+            imageLayout = 'single';
+        } else if (imageUrls.length <= 4) {
+            imageLayout = 'grid';
+        } else if (imageUrls.length <= 6) {
+            imageLayout = 'collage';
+        } else {
+            imageLayout = 'carousel';
+        }
+    }
+
+    // Save post with multiple images
     const newPost = await createPostRepo({
         caption: data.caption || "",
-        imageUrl,
+        imageUrl: imageUrls, // CHANGED: Save to imageUrl field (array)
+        imageLayout: imageLayout, // NEW: layout type
         location: data.location,
         locationCoords: coords,
         taggedPeople: [],
@@ -52,9 +85,11 @@ export const createPostService = async (data: any, file?: Express.Multer.File, u
         profileImage: (p.postedBy as any)?.picturePath || "",
         likes: p.likes.length,
         comments: p.comments.length,
+        // FIXED: Return images from imageUrl field
+        images: p.imageUrl || [],
+        imageLayout: p.imageLayout || 'single'
     };
 };
-
 
 export const getAllPostsService = async () => {
     const posts = await getAllPostsRepo();
@@ -68,10 +103,12 @@ export const getAllPostsService = async () => {
             profileImage: postedByUser?.picturePath || null,
             likes: p.likes.length,
             comments: p.comments.length,
+            // FIXED: Return images from imageUrl field
+            images: p.imageUrl || [],
+            imageLayout: p.imageLayout || 'single'
         };
     });
 };
-
 
 export const getRecommendedPostsService = async (userId: string) => {
     const posts = await getRecommendedPostsRepo(userId);
@@ -85,6 +122,9 @@ export const getRecommendedPostsService = async (userId: string) => {
             profileImage: postedByUser?.picturePath || null,
             likes: p.likes.length,
             comments: p.comments.length,
+            // FIXED: Return images from imageUrl field
+            images: p.imageUrl || [],
+            imageLayout: p.imageLayout || 'single'
         };
     });
 };
@@ -143,7 +183,3 @@ export const getMyTravelLocationsService = async (userId: string) => {
         date: p.createdAt
     }));
 };
-
-
-
-

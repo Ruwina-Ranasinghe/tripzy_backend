@@ -3,7 +3,8 @@ import {IUser} from "./user.model.js";
 
 export interface IPost extends Document {
     caption: string;
-    imageUrl?: string;
+    imageUrl?: string[];
+    imageLayout?: 'single' | 'grid' | 'carousel' | 'collage';
     location?: string;
     locationCoords?: {
         lat: Number,
@@ -28,8 +29,21 @@ export interface IPost extends Document {
 const postSchema = new Schema<IPost>(
     {
         caption: { type: String, required: false },
-        imageUrl: { type: String, required: false },
-
+        imageUrl: {
+            type: [String],
+            default: [],
+            validate: {
+                validator: function(v: string[]) {
+                    return v.length <= 10; // Max 10 images per post
+                },
+                message: 'A post can have maximum 10 images'
+            }
+        },
+        imageLayout: {
+            type: String,
+            enum: ['single', 'grid', 'carousel', 'collage'],
+            default: 'single'
+        },
         location: { type: String },
 
         locationCoords: {
