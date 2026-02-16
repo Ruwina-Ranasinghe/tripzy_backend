@@ -1,7 +1,7 @@
 import {
     createUserRepo,
     findOneUserRepo,
-    getTopUsersRepo,
+    getTopUsersRepo, getUserByIdRepo,
     getUserRankRepo, // ADD THIS
     updateUserPreferencesRepo
 } from "../dataaccess/user.repo.js";
@@ -143,5 +143,26 @@ export const saveUserPreferencesService = async (userId: string, data: any) => {
         id: updatedUser._id,
         displayName: updatedUser.displayName,
         preferences: updatedUser.preferences,
+    };
+};
+
+export const getUserByIdService = async (userId: string) => {
+    const user = await getUserByIdRepo(userId);
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    return {
+        id: user._id,
+        displayName: user.displayName,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        country: user.country,
+        scoreForLeaderboard: user.scoreForLeaderboard,
+        picturePath: user.picturePath,
+        level: calculateLevel(user.scoreForLeaderboard),
+        countriesVisited: calculateCountriesVisited(user.scoreForLeaderboard),
     };
 };

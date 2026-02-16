@@ -2,7 +2,7 @@ import {Router} from "express";
 import multer from "multer";
 import {
     getCurrentUserRankController, // ADD THIS
-    getLeaderboardController,
+    getLeaderboardController, getUserByIdController,
     loginUserController,
     saveUserPreferencesController,
     userSignUpController
@@ -18,3 +18,4 @@ userRoutes.post("/login", loginUserController);
 userRoutes.get("/leaderboard", getLeaderboardController);
 userRoutes.get("/my-rank", authMiddleware, getCurrentUserRankController); // ADD THIS LINE
 userRoutes.post("/preferences", authMiddleware, saveUserPreferencesController);
+userRoutes.get("/:userId", authMiddleware, getUserByIdController);

@@ -84,3 +84,9 @@ export const getCurrentUserRankController = async (req: any, res: any) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+export const getUserByIdRepo = (userId: string) => {
+    return User.findById(userId)
+        .select("displayName firstName lastName email country scoreForLeaderboard picturePath")
+        .exec();
+};

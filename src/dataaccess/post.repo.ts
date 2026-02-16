@@ -109,3 +109,10 @@ export const getUserPostsRepo = (userId: string) => {
         .sort({ createdAt: -1 })
         .exec();
 };
+
+export const getUserPostsByIdRepo = (userId: string) => {
+    return Post.find({ postedBy: userId })
+        .populate("postedBy", "displayName picturePath")
+        .sort({ createdAt: -1 })
+        .exec();
+};

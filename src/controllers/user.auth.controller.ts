@@ -3,7 +3,7 @@ import {InfoMessages} from "../constants/messages.js";
 import {IRequest} from "../constants/request.js";
 import {
     getCurrentUserRankService, // ADD THIS
-    getLeaderboardService,
+    getLeaderboardService, getUserByIdService,
     loginUserService,
     registerUserService,
     saveUserPreferencesService
@@ -89,6 +89,32 @@ export const saveUserPreferencesController = async (req: IRequest, res: Response
         });
     } catch (error: any) {
         res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const getUserByIdController = async (req: any, res: any, next: NextFunction) => {
+    try {
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required"
+            });
+        }
+
+        const user = await getUserByIdService(userId);
+
+        return res.status(200).json({
+            success: true,
+            data: user,
+        });
+    } catch (error: any) {
+        console.error('Error fetching user:', error);
+        return res.status(404).json({
             success: false,
             message: error.message
         });

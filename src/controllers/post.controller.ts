@@ -7,7 +7,7 @@ import {
     likePostService
 } from "../services/post.service.js";
 import {IRequest} from "../constants/request.js";
-import {getUserPostsRepo} from "../dataaccess/post.repo.js";
+import {getUserPostsByIdRepo, getUserPostsRepo} from "../dataaccess/post.repo.js";
 
 export const createPostController = async (req: any, res: any) => {
     try {
@@ -144,6 +144,48 @@ export const getMyPostsController = async (req: any, res: any) => {
         });
     } catch (error: any) {
         console.error('Error fetching my posts:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const getUserPostsByIdController = async (req: any, res: any) => {
+    try {
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required"
+            });
+        }
+
+        const posts = await getUserPostsByIdRepo(userId);
+
+        // Format posts properly
+        const formattedPosts = posts.map(post => {
+            const p = post.toObject();
+            const postedByUser = post.postedBy as any;
+
+            return {
+                ...p,
+                username: postedByUser?.displayName || 'Unknown',
+                profileImage: postedByUser?.picturePath || null,
+                images: p.imageUrl || [],
+                imageLayout: p.imageLayout || 'single',
+                likes: p.likes.length,
+                comments: p.comments.length,
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            data: formattedPosts
+        });
+    } catch (error: any) {
+        console.error('Error fetching user posts:', error);
         res.status(500).json({
             success: false,
             message: error.message
